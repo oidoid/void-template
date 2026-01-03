@@ -1,0 +1,22 @@
+{
+  "atlas": {
+    "anim": {
+      "cursor--Pointer": {
+        "cels": 1,
+        "h": 14,
+        "hitbox": {"x": 0, "y": 0, "w": 2, "h": 2},
+        "hurtbox": {"x": 0, "y": 0, "w": 2, "h": 2},
+        "id": 0,
+        "w": 8
+      }
+    },
+    "celXY": [0, 0]
+  },
+  "init": {
+    "input": "Default",
+    "minWH": {"w": 256, "h": 256},
+    "minScale": 1,
+    "mode": "Int",
+    "zoomOut": 0
+  }
+}

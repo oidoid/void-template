@@ -1,0 +1,14 @@
+{
+  "$schema": "../level/level-file.json",
+  "ents": [
+    {"name": "Cam", "cam": {}},
+
+    {
+      "id": "Cursor",
+      "sprite": {"tag": "cursor--Pointer"},
+      "cursor": {"keyboard": 128}
+    },
+
+    {"pizza": {"cheese": true}}
+  ]
+}

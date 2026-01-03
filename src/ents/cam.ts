@@ -1,0 +1,9 @@
+import type * as V from '@oidoid/void'
+
+export class CamSys implements V.Sys {
+  readonly query = 'cam'
+
+  update(_ent: V.CamEnt, v: V.Void): void {
+    v.cam.update(v.canvas)
+  }
+}
