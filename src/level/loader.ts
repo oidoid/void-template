@@ -25,10 +25,9 @@ export class Loader implements V.Loader {
 
   update(v: V.Void): void {
     switch (this.#lvl) {
-      case undefined: {
+      case undefined:
         this.#init(v)
         break
-      }
       case 'Init':
         break
       default:
