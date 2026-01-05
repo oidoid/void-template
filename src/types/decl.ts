@@ -5,7 +5,6 @@ import type {PizzaSchema} from '../level/level-schema.ts'
 
 declare module '@oidoid/void' {
   interface Ent {
-    // to-do: do i need cam and draw and loader here???
     pizza?: Pizza
   }
 
@@ -13,13 +12,9 @@ declare module '@oidoid/void' {
     pizza?: PizzaSchema
   }
 
-  interface LevelZoo {
-    start: Ent[]
-    end: Ent[]
-  }
-
-  interface Loader {
-    level: undefined | 'Init'
+  interface Zoo {
+    start: Set<Ent>
+    end: Set<Ent>
   }
 
   interface ReturnTag {
