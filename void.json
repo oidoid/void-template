@@ -3,11 +3,8 @@
   "out": {
     "name": "void-template",
     "dir": "dist/public/",
-    "game": "src/assets/void.game.json"
+    "game": "src/assets/void.game.json",
+    "tagSchema": "src/level/tags.json"
   },
-  "preloadAtlas": {
-    "dir": "src/assets/atlas/",
-    "image": "dist/public/atlas.webp"
-  },
-  "init": {"minWH": {"w": 256, "h": 256}}
+  "atlas": {"dir": "src/assets/atlas/", "image": "dist/public/atlas.webp"}
 }

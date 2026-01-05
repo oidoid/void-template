@@ -5,11 +5,17 @@ import type {PizzaSchema} from '../level/level-schema.ts'
 
 declare module '@oidoid/void' {
   interface Ent {
+    // to-do: do i need cam and draw and loader here???
     pizza?: Pizza
   }
 
   interface EntSchema {
     pizza?: PizzaSchema
+  }
+
+  interface LevelZoo {
+    start: Ent[]
+    end: Ent[]
   }
 
   interface Loader {

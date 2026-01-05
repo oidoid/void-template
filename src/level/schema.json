@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Ent": {
+      "allOf": [
+        {"$ref": "level-file.v0.json#/$defs/Ent"},
+        {
+          "type": "object",
+          "properties": {
+            "pizza": {"$ref": "#/$defs/Pizza", "unevaluatedProperties": false}
+          }
+        }
+      ]
+    },
+    "Pizza": {
+      "type": "object",
+      "description": "pizza config.",
+      "properties": {
+        "cheese": {"description": "cheese topping.", "type": "boolean"}
+      }
+    }
+  }
+}

@@ -1,5 +1,7 @@
 # void-template
 
+skeleton for void games.
+
 ## Native Dependencies
 
 - Aseprite

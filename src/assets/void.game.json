@@ -12,11 +12,6 @@
     },
     "celXY": [0, 0]
   },
-  "init": {
-    "input": "Default",
-    "minWH": {"w": 256, "h": 256},
-    "minScale": 1,
-    "mode": "Int",
-    "zoomOut": 0
-  }
+  "input": "Default",
+  "mode": "Int"
 }

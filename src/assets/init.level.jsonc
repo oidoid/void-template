@@ -1,14 +1,17 @@
 {
-  "$schema": "../level/level-file.json",
-  "ents": [
-    {"name": "Cam", "cam": {}},
+  "$schema": "../level/level-file.v0.json",
+  "minWH": {"w": 256, "h": 256},
+  "zoo": {
+    "start": [{"name": "Cam", "cam": {}}],
+    "default": [
+      {
+        "id": "Cursor",
+        "sprite": {"tag": "cursor--Pointer"},
+        "cursor": {"keyboard": 128}
+      },
 
-    {
-      "id": "Cursor",
-      "sprite": {"tag": "cursor--Pointer"},
-      "cursor": {"keyboard": 128}
-    },
-
-    {"pizza": {"cheese": true}}
-  ]
+      {"pizza": {"cheese": true}}
+    ],
+    "end": [{"draw": {}}]
+  }
 }
