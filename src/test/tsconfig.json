@@ -1,0 +1,30 @@
+// TypeScript config for test code under src/**/*.test.ts and src/test/**/*.
+{
+  "extends": "@oidoid/config/tsconfig",
+  "compilerOptions": {
+    "lib": [
+      "DOM",
+      "DOM.AsyncIterable",
+      "DOM.Iterable",
+      "ES2023",
+      "ESNext.disposable"
+    ],
+
+    "noEmit": true, // tsc is only used for type-checking.
+
+    "types": ["node"],
+
+    "outDir": "../../dist/",
+    "rootDir": "../../"
+  },
+  "include": [
+    "${configDir}/",
+    "${configDir}/**/*.json",
+    "../../**/*.test.ts",
+    "../../**/*.test*.json",
+    "../../**/test/",
+    "../../**/test/**/*.json"
+  ],
+  "exclude": ["../../node_modules/", "../../dist/"],
+  "references": [{"path": "../"}]
+}

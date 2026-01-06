@@ -1,14 +1,5 @@
 {
-  "extends": "@oidoid/config/tsconfig",
-  "compilerOptions": {
-    "customConditions": ["browser"],
-    "lib": ["DOM", "ES2023", "ESNext.disposable"],
-    "outDir": "dist/"
-  },
-  "exclude": [
-    "node_modules/",
-    "dist/",
-    "${configDir}/**/*.test.*",
-    "${configDir}/**/test/"
-  ]
+  // build all references.
+  "files": [],
+  "references": [{"path": "./src/"}, {"path": "./src/test/"}]
 }

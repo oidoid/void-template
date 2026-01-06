@@ -1,9 +1,10 @@
 {
   "author": "Stephen Niedzielski <stephen@oidoid.com> (https://oidoid.com)",
   "devDependencies": {
-    "@biomejs/biome": "2.3.10",
-    "@oidoid/config": "0.0.5",
-    "@oidoid/void": "0.1.7",
+    "@biomejs/biome": "2.3.11",
+    "@oidoid/config": "0.0.6",
+    "@oidoid/void": "0.1.8",
+    "@types/node": "24.4.0",
     "typescript": "5.9.3"
   },
   "engines": {
@@ -14,7 +15,7 @@
   "private": true,
   "published": "20260101",
   "scripts": {
-    "build": "npm run build:favicon && void --minify --one-file --tsconfig=tsconfig.prod.json",
+    "build": "npm run build:favicon && void --minify --one-file",
     "build:favicon": "for s in 1 2 3 4 12; do f=dist/public/favicon/favicon$(($s * 16)); aseprite src/assets/favicon.aseprite --batch --color-mode=indexed --scale=$s --save-as=$f.png && cwebp -exact -lossless -mt -quiet -z 9 $f.png -o $f.webp; done",
     "clean": "rm -rf dist/",
     "preversion": "[ -z \"$(git status -z)\" ]",

@@ -10,7 +10,6 @@ export const parseComponent: V.ComponentHook = (_ent, json, k) => {
   }
 }
 
-// to-do: unit test.
 /** @internal */
 export function parsePizza(json: Readonly<PizzaSchema>): Pizza {
   return {cheese: json.cheese ?? false}
