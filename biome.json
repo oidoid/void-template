@@ -10,7 +10,7 @@
             "paths": {
               "@oidoid/void": {
                 "allowImportNames": ["*"],
-                "message": "use a namespace import: `import * as v from '@oidoid/void'`."
+                "message": "use a namespace import: `import * as V from '@oidoid/void'`."
               }
             }
           }
