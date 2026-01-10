@@ -1,25 +1,25 @@
 import * as V from '@oidoid/void'
 import levelJSON from '../assets/init.level.jsonc' with {type: 'json'}
-import {CamSys} from '../ents/cam.ts'
-import {DrawSys} from '../ents/draw.ts'
-import {PizzaSys} from '../ents/pizza.ts'
+import {CamHook} from '../ents/cam.ts'
+import {DrawHook} from '../ents/draw.ts'
+import {PizzaHook} from '../ents/pizza.ts'
 import {parseComponent} from './level-parser.ts'
 
 export class Loader implements V.Loader {
   cursor: V.CursorEnt | undefined
   #lvl: 'Init' | undefined
-  readonly #systems: V.SysMap = {
-    button: new V.ButtonSys(),
-    cam: new CamSys(),
-    draw: new DrawSys(),
-    cursor: new V.CursorSys(),
-    hud: new V.HUDSys(),
-    ninePatch: new V.NinePatchSys(),
-    override: new V.OverrideSys(),
-    pizza: new PizzaSys(),
-    sprite: new V.SpriteSys(),
-    textWH: new V.TextWHSys(),
-    textXY: new V.TextXYSys()
+  readonly #hooks: Readonly<V.HookMap> = {
+    button: new V.ButtonHook(),
+    cam: new CamHook(),
+    draw: new DrawHook(),
+    cursor: new V.CursorHook(),
+    hud: new V.HUDHook(),
+    ninePatch: new V.NinePatchHook(),
+    override: new V.OverrideHook(),
+    pizza: new PizzaHook(),
+    sprite: new V.SpriteHook(),
+    textWH: new V.TextWHHook(),
+    textXY: new V.TextXYHook()
   }
   #zoo: V.Zoo = {start: new Set(), default: new Set(), end: new Set()}
 
@@ -34,8 +34,7 @@ export class Loader implements V.Loader {
         this.#lvl satisfies never
     }
 
-    for (const zoo of Object.values(this.#zoo))
-      V.zooUpdate(zoo, this.#systems, v)
+    for (const zoo of Object.values(this.#zoo)) V.zooUpdate(zoo, this.#hooks, v)
   }
 
   #init(v: V.Void): void {

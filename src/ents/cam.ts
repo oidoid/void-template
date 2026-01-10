@@ -1,6 +1,6 @@
 import type * as V from '@oidoid/void'
 
-export class CamSys implements V.Sys {
+export class CamHook implements V.Hook {
   readonly query = 'cam'
 
   update(_ent: V.CamEnt, v: V.Void): void {
