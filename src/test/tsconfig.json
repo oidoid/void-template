@@ -21,7 +21,7 @@
     "${configDir}/",
     "${configDir}/**/*.json",
     "../../**/*.test.ts",
-    "../../**/*.test*.json",
+    "../../**/*.test.json",
     "../../**/test/",
     "../../**/test/**/*.json"
   ],
