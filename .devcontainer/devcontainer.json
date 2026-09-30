@@ -1,0 +1,27 @@
+// if this fails to download, remember `sudo systemctl restart docker`.
+{
+  "name": "linux",
+  "image": "mcr.microsoft.com/devcontainers/base:2-trixie",
+  "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {"version": "1.27.1"},
+    "ghcr.io/devcontainers/features/node:2": {"version": "24.18.0"}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "golang.go",
+        "ms-vscode.makefile-tools",
+        "openai.chatgpt",
+        "slevesque.shader"
+      ]
+    }
+  },
+  "mounts": [
+    "source=/usr/bin/aseprite,target=/usr/bin/aseprite,type=bind",
+    "source=/usr/share/aseprite,target=/usr/share/aseprite,type=bind"
+  ],
+  "postCreateCommand": ".devcontainer/post-create.sh"
+}

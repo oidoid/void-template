@@ -1,11 +1,22 @@
 # void-template
 
-skeleton for void games.
+skeleton for [void](https://github.com/oidoid/void) games.
+
+## Development
+
+for engine development, keep void as a sibling directory.
 
 ## Native Dependencies
 
 - Aseprite
 - cwebp
+- Go
+- Mono
+- Node.js
+- Shader Minifier
+- TinyGo
+- wasm-opt
+- watchexec
 
 ## Copyright and License
 

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="16" height="9" tilewidth="16" tileheight="16" infinite="0" nextlayerid="3" nextobjectid="2">
+ <tileset firstgid="1" source="../boarddefs/tiles.tsx"/>
+ <tileset firstgid="65" source="../boarddefs/ents.tsx"/>
+ <layer id="1" name="Play" width="16" height="9">
+  <data encoding="csv">
+1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,
+9,10,10,10,10,10,10,10,10,10,10,10,10,10,10,11,
+9,10,10,10,10,10,10,10,10,10,10,10,10,10,10,11,
+9,10,10,10,1,3,10,10,10,10,1,3,10,10,10,11,
+9,10,10,10,10,10,10,10,10,10,10,10,10,10,10,11,
+9,10,10,10,10,10,10,10,10,10,10,10,10,10,10,11,
+9,10,10,10,1,3,10,10,10,10,1,3,10,10,10,11,
+9,10,10,10,10,10,10,10,10,10,10,10,10,10,10,11,
+17,18,18,18,18,18,18,18,18,18,18,18,18,18,18,19
+</data>
+ </layer>
+ <objectgroup id="2" name="Spawns">
+  <object id="1" type="P1" gid="65" x="32" y="32" width="8" height="13"/>
+ </objectgroup>
+</map>
