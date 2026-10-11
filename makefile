@@ -20,7 +20,7 @@ go_test_filter = \
 	sed --regexp-extended --unbuffered $(if $(value V),'','/^ok |\[no test files\]$$|PASS$$|^goos: |^goarch: |^pkg: |^cpu: /d')
 # precise GC lets the collector skip scanning pointer-free heap objects instead
 # of conservatively treating every word as a possible pointer.
-tinygo_flags += $(go_tags) --ldflags="-X github.com/oidoid/void-template/src/game.Version=$(bundle_id)" --scheduler=none --gc=precise $(if $(value DEBUG),,$(tinygo_nodebug) --panic=trap) $(if $(value V),--print-allocs=.,)
+tinygo_flags += --trimpath $(go_tags) --ldflags="-X github.com/oidoid/void-template/src/game.Version=$(bundle_id)" --scheduler=none --gc=precise $(if $(value DEBUG),,$(tinygo_nodebug) --panic=trap) $(if $(value V),--print-allocs=.,)
 # $(1) flags
 pack = go tool $(void_module)/src/cmd/pack --out=dist/ --tsconfig=tsconfig.json $(1) src/web/assets/index.html
 # $(1) flags

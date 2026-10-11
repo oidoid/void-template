@@ -30,8 +30,8 @@ github.com/go-toolsmith/typep v1.1.0/go.mod h1:fVIw+7zjdsMxDA3ITWnH1yOiw1rnTQKCs
 github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
-github.com/oidoid/void v0.1.11-0.20260928040410-c39ea3ca21da h1:kGmIfCPsoTZ/ZuIcSLgJ0nqUlVUbrBp7YKOi3GJuZBk=
-github.com/oidoid/void v0.1.11-0.20260928040410-c39ea3ca21da/go.mod h1:izM6iFYJw1jfYJzNAoORz4K03hJPjqPsy1LNttgH65g=
+github.com/oidoid/void v0.1.11-0.20261011021530-c4570b965ab4 h1:x7gvb9kmE11ICggFRt4YFdgqyiRaJFOUAsLfUZFUp7U=
+github.com/oidoid/void v0.1.11-0.20261011021530-c4570b965ab4/go.mod h1:izM6iFYJw1jfYJzNAoORz4K03hJPjqPsy1LNttgH65g=
 github.com/quasilyte/go-ruleguard v0.4.5 h1:AGY0tiOT5hJX9BTdx/xBdoCubQUAE2grkqY2lSwvZcA=
 github.com/quasilyte/go-ruleguard v0.4.5/go.mod h1:Vl05zJ538vcEEwu16V/Hdu7IYZWyKSwIy4c88Ro1kRE=
 github.com/quasilyte/gogrep v0.5.0 h1:eTKODPXbI8ffJMN+W2aE0+oL0z/nh8/5eNdiO34SOAo=

@@ -12,7 +12,7 @@ tool (
 	honnef.co/go/tools/cmd/staticcheck
 )
 
-require github.com/oidoid/void v0.1.11-0.20260928040410-c39ea3ca21da
+require github.com/oidoid/void v0.1.11-0.20261011021530-c4570b965ab4
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
