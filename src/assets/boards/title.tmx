@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="16" height="9" tilewidth="16" tileheight="16" infinite="0" nextlayerid="3" nextobjectid="5">
  <tileset firstgid="1" source="../boarddefs/tiles.tsx"/>
- <tileset firstgid="65" source="../boarddefs/ents.tsx"/>
+ <tileset firstgid="65" source="../boarddefs/spawns.tsx"/>
  <layer id="1" name="Title" width="16" height="9">
   <data encoding="csv">
 1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,
@@ -15,7 +15,7 @@
 17,18,18,18,18,18,18,18,18,18,18,18,18,18,18,19
 </data>
  </layer>
- <objectgroup id="2" name="Entities">
+ <objectgroup id="2" name="Spawns">
   <object id="4" type="Cursor" gid="66" x="0" y="0" width="8" height="13"/>
   <object id="1" type="Text" x="80" y="36" width="96" height="8">
    <properties>

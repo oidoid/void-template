@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.12.2" name="entities" tilewidth="8" tileheight="13" tilecount="2" columns="0" objectalignment="topleft">
+<tileset version="1.10" tiledversion="1.12.2" name="spawns" tilewidth="8" tileheight="13" tilecount="2" columns="0" objectalignment="topleft">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0" type="P1">
   <image source="../atlas/p1.aseprite" width="8" height="13"/>
