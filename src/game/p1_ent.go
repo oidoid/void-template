@@ -39,6 +39,9 @@ func (this *P1Ent) Update(gam *Game) veng.Status {
 	case in.Dir.Y > 0:
 		this.SetTag(tags.P1WalkDown)
 		this.SetFlipX(false)
+	default:
+		// cancel the shader's animation clock while idle.
+		this.SetCel(vgfx.AnimStartCel(gam.NowMillis()))
 	}
 	layer := gam.Layer(this.Z.Layer())
 	if layer.Clip.HitsBox(vgeo.XYWH(
