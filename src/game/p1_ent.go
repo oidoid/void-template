@@ -40,6 +40,7 @@ func (this *P1Ent) Update(gam *Game) veng.Status {
 		this.SetTag(tags.P1WalkDown)
 		this.SetFlipX(false)
 	default:
+		// to-do: set idle tag.
 		// cancel the shader's animation clock while idle.
 		this.SetCel(vgfx.AnimStartCel(gam.NowMillis()))
 	}
