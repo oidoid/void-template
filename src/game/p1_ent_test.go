@@ -13,6 +13,7 @@ import (
 )
 
 func TestP1EntIdleAnimationStaysStillAcrossRedraws(t *testing.T) {
+	const recordedCel = 5
 	tests := []struct {
 		name string
 		walk vin.Key
@@ -32,6 +33,7 @@ func TestP1EntIdleAnimationStaysStillAcrossRedraws(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			gam := NewGame()
 			lvl := routeLvl0(gam)
+			lvl.p1.SetCel(recordedCel)
 			poll := gam.Poll()
 			poll.CanvasPhy = vgeo.NewWH[uint16](256, 144)
 			poll.DeltaMillis = 16
@@ -53,8 +55,12 @@ func TestP1EntIdleAnimationStaysStillAcrossRedraws(t *testing.T) {
 				// resolve the rendered cel using the sprite shader's clock.
 				cel := (uint64(spr.Cel()) + uint64(now/vatlas.CelMillis)) &
 					uint64(vatlas.TagCelMask)
-				if cel != 0 {
-					t.Fatalf("idle cel at %g ms = %d, want 0", now, cel)
+				if cel != recordedCel {
+					t.Fatalf("idle cel at %g ms = %d, want %d",
+						now, cel, recordedCel)
+				}
+				if lvl.p1.Cel() != recordedCel {
+					t.Fatalf("recorded cel changed to %d", lvl.p1.Cel())
 				}
 			}
 
@@ -71,8 +77,8 @@ func TestP1EntIdleAnimationStaysStillAcrossRedraws(t *testing.T) {
 				cel := (uint64(spr.Cel()) +
 					uint64(poll.NowMillis/vatlas.CelMillis)) &
 					uint64(vatlas.TagCelMask)
-				if cel != i {
-					t.Fatalf("walking cel = %d, want %d", cel, i)
+				if want := recordedCel + 1 + i; cel != want {
+					t.Fatalf("walking cel = %d, want %d", cel, want)
 				}
 			}
 		})

@@ -21,6 +21,7 @@ func NewP1Ent(spawn vboards.Spawn) P1Ent {
 
 func (this *P1Ent) Update(gam *Game) veng.Status {
 	in := gam.In()
+	idle := in.Dir == (vgeo.XY[int8]{})
 	by := p1Vel * float32(gam.DeltaSecs())
 	this.X += float32(in.Dir.X) * by
 	this.Y += float32(in.Dir.Y) * by
@@ -39,18 +40,19 @@ func (this *P1Ent) Update(gam *Game) veng.Status {
 	case in.Dir.Y > 0:
 		this.SetTag(tags.P1WalkDown)
 		this.SetFlipX(false)
-	default:
-		// to-do: set idle tag.
-		// cancel the shader's animation clock while idle.
-		this.SetCel(vgfx.AnimStartCel(gam.NowMillis()))
 	}
 	layer := gam.Layer(this.Z.Layer())
 	if layer.Clip.HitsBox(vgeo.XYWH(
 		this.X, this.Y, float32(this.W), float32(this.H),
 	)) {
-		layer.Sprs = append(layer.Sprs, this.Spr)
+		spr := this.Spr
+		if idle {
+			// to-do: set idle tag.
+			spr.Pause(gam.NowMillis())
+		}
+		layer.Sprs = append(layer.Sprs, spr)
 	}
-	if in.Dir != (vgeo.XY[int8]{}) {
+	if !idle {
 		return veng.Loop
 	}
 	return veng.Pause
