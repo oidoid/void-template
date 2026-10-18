@@ -20,28 +20,37 @@ func NewP1Ent(spawn vboards.Spawn) P1Ent {
 }
 
 func (this *P1Ent) Update(gam *Game) veng.Status {
-	in := gam.In()
-	idle := in.Dir == (vgeo.XY[int8]{})
+	dir := gam.In().Dir
+	idle := dir == (vgeo.XY[int8]{})
+	xy := this.XY
 	by := p1Vel * float32(gam.DeltaSecs())
-	this.X += float32(in.Dir.X) * by
-	this.Y += float32(in.Dir.Y) * by
+	this.X += float32(dir.X) * by
+	this.Y += float32(dir.Y) * by
 	this.X = vmath.Clamp(0, max(float32(gam.Board().W)-float32(this.W), 0), this.X)
 	this.Y = vmath.Clamp(0, max(float32(gam.Board().H)-float32(this.H), 0), this.Y)
+	// prefer vertical animation when a board edge blocks horizontal movement.
+	if this.X == xy.X && this.Y != xy.Y {
+		dir.X = 0
+	}
 	tag := this.Tag
 	switch {
-	case in.Dir.X != 0:
+	case dir.X != 0:
 		tag = tags.P1WalkRight
-	case in.Dir.Y < 0:
+	case dir.Y < 0:
 		tag = tags.P1WalkUp
-	case in.Dir.Y > 0:
+	case dir.Y > 0:
 		tag = tags.P1WalkDown
 		// to-do: idle tag.
 	}
 	this.SetTag(tag)
 	if !idle {
-		this.SetFlipX(in.Dir.X < 0)
+		this.SetFlipX(dir.X < 0)
 	}
-	this.Anim.Update(gam.Atlas(), gam.DeltaMs())
+	delta := gam.DeltaMs()
+	if idle {
+		delta = 0
+	}
+	this.Anim.Update(gam.Atlas(), delta)
 	layer := gam.Layer(this.Z.Layer())
 	if layer.Clip.HitsBox(vgeo.XYWH(
 		this.X, this.Y, float32(this.W), float32(this.H),
