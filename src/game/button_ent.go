@@ -9,8 +9,8 @@ import (
 )
 
 func newButtonEnt(label string) veng.ButtonEnt {
-	edge := vgfx.Spr{TagCel: tags.WidgetEdgeLight.Cel(0)}
-	fill := vgfx.Spr{TagCel: tags.WidgetFill.Cel(0)}
+	edge := vgfx.Spr{Tag: tags.WidgetEdgeLight}
+	fill := vgfx.Spr{Tag: tags.WidgetFill}
 	this := veng.ButtonEnt{
 		PatchByDir: [9]vgfx.Spr{
 			vgeo.DirE:      edge,

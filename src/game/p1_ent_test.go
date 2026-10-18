@@ -12,76 +12,73 @@ import (
 	"github.com/oidoid/void/src/void/vin"
 )
 
-func TestP1EntIdleAnimationStaysStillAcrossRedraws(t *testing.T) {
-	const recordedCel = 5
-	tests := []struct {
+func TestP1EntPausesAndResumesAuthoredAnimation(t *testing.T) {
+	for _, test := range []struct {
 		name string
-		walk vin.Key
 		idle vin.Key
 	}{
-		{name: "released", walk: vin.KeyLeft},
-		{
-			name: "left and right", walk: vin.KeyLeft,
-			idle: vin.KeyLeft | vin.KeyRight,
-		},
-		{
-			name: "up and down", walk: vin.KeyUp,
-			idle: vin.KeyUp | vin.KeyDown,
-		},
-	}
-	for _, test := range tests {
+		{name: "released"},
+		{name: "opposing horizontal", idle: vin.KeyLeft | vin.KeyRight},
+		{name: "opposing vertical", idle: vin.KeyUp | vin.KeyDown},
+	} {
 		t.Run(test.name, func(t *testing.T) {
 			gam := NewGame()
 			lvl := routeLvl0(gam)
-			lvl.p1.SetCel(recordedCel)
 			poll := gam.Poll()
 			poll.CanvasPhy = vgeo.NewWH[uint16](256, 144)
-			poll.DeltaMillis = 16
-			poll.NowMillis = 187.5
-			poll.InPoll.Kbd.Keys = test.walk
+			poll.DeltaMillis = 100
+			poll.InPoll.Kbd.Keys = vin.KeyLeft
 			gam.Update()
-			xy, tag, flip := lvl.p1.XY, lvl.p1.Tag(), lvl.p1.FlipX()
-
+			if lvl.p1.Cel != 1 {
+				t.Fatalf("100 ms cel = %d, want 1", lvl.p1.Cel)
+			}
+			xy, tag, cel := lvl.p1.XY, lvl.p1.Tag, lvl.p1.Cel
 			poll.InPoll.Kbd.Keys = test.idle
 			for _, now := range []float64{250, 312.5, 999, 1000, 1062.5} {
 				poll.NowMillis = now
 				if got := gam.Update(); got != veng.Pause {
-					t.Fatalf("idle status = %v, want Pause", got)
+					t.Fatalf("idle status = %v", got)
 				}
 				spr := gam.Layer(gfx.LayerP1).Sprs[0]
-				if spr.XY != xy || spr.Tag() != tag || spr.FlipX() != flip {
-					t.Fatalf("idle P1 changed position or facing: %v", spr)
-				}
-				// resolve the rendered cel using the sprite shader's clock.
-				cel := (uint64(spr.Cel()) + uint64(now/vatlas.CelMillis)) &
-					uint64(vatlas.TagCelMask)
-				if cel != recordedCel {
-					t.Fatalf("idle cel at %g ms = %d, want %d",
-						now, cel, recordedCel)
-				}
-				if lvl.p1.Cel() != recordedCel {
-					t.Fatalf("recorded cel changed to %d", lvl.p1.Cel())
+				if spr.XY != xy || spr.Tag != tag || spr.Cel != cel || !spr.FlipX() {
+					t.Fatalf("idle sprite changed: %+v", spr)
 				}
 			}
-
-			poll.InPoll.Kbd.Keys = test.walk
-			for i := uint64(1); i <= 2; i++ {
-				poll.NowMillis += vatlas.CelMillis
-				if got := gam.Update(); got != veng.Loop {
-					t.Fatalf("walking status = %v, want Loop", got)
-				}
-				spr := gam.Layer(gfx.LayerP1).Sprs[0]
-				if spr.XY == xy {
-					t.Fatal("P1 did not resume moving")
-				}
-				cel := (uint64(spr.Cel()) +
-					uint64(poll.NowMillis/vatlas.CelMillis)) &
-					uint64(vatlas.TagCelMask)
-				if want := recordedCel + 1 + i; cel != want {
-					t.Fatalf("walking cel = %d, want %d", cel, want)
-				}
+			poll.InPoll.Kbd.Keys = vin.KeyLeft
+			gam.Update()
+			if lvl.p1.Cel != 2 {
+				t.Fatalf("resumed cel = %d, want 2", lvl.p1.Cel)
 			}
 		})
+	}
+}
+
+func TestP1EntUsesAtlasPlaybackSettings(t *testing.T) {
+	gam := NewGame()
+	lvl := routeLvl0(gam)
+	atlas := gam.Atlas()
+	atlas.Meta[tags.P1WalkRight].Dir = vatlas.AnimDirReverse
+	atlas.Meta[tags.P1WalkRight].Repeat = 1
+	atlas.Cels[atlas.Meta[tags.P1WalkRight].CelIndex+7].Millis = 237
+	poll := gam.Poll()
+	poll.CanvasPhy = vgeo.NewWH[uint16](256, 144)
+	poll.InPoll.Kbd.Keys = vin.KeyRight
+	poll.DeltaMillis = 236
+	gam.Update()
+	if lvl.p1.Cel != 7 {
+		t.Fatalf("reverse start = %d", lvl.p1.Cel)
+	}
+	poll.DeltaMillis = 1
+	gam.Update()
+	if lvl.p1.Cel != 6 {
+		t.Fatalf("authored duration = %d", lvl.p1.Cel)
+	}
+	poll.DeltaMillis = 10000
+	if gam.Update() != veng.Loop {
+		t.Fatal("movement must keep updating after animation finishes")
+	}
+	if lvl.p1.Cel != 0 || !lvl.p1.Done() {
+		t.Fatal("one-shot did not stop")
 	}
 }
 

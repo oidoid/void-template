@@ -12,11 +12,11 @@ import (
 const p1Vel = float32(32)
 
 type P1Ent struct {
-	vgfx.Spr
+	vgfx.Anim
 }
 
 func NewP1Ent(spawn vboards.Spawn) P1Ent {
-	return P1Ent{Spr: spawn.Spr()}
+	return P1Ent{Anim: vgfx.Anim{Spr: spawn.Spr()}}
 }
 
 func (this *P1Ent) Update(gam *Game) veng.Status {
@@ -27,30 +27,26 @@ func (this *P1Ent) Update(gam *Game) veng.Status {
 	this.Y += float32(in.Dir.Y) * by
 	this.X = vmath.Clamp(0, max(float32(gam.Board().W)-float32(this.W), 0), this.X)
 	this.Y = vmath.Clamp(0, max(float32(gam.Board().H)-float32(this.H), 0), this.Y)
+	tag := this.Tag
 	switch {
-	case in.Dir.X < 0:
-		this.SetTag(tags.P1WalkRight)
-		this.SetFlipX(true)
-	case in.Dir.X > 0:
-		this.SetTag(tags.P1WalkRight)
-		this.SetFlipX(false)
+	case in.Dir.X != 0:
+		tag = tags.P1WalkRight
 	case in.Dir.Y < 0:
-		this.SetTag(tags.P1WalkUp)
-		this.SetFlipX(false)
+		tag = tags.P1WalkUp
 	case in.Dir.Y > 0:
-		this.SetTag(tags.P1WalkDown)
-		this.SetFlipX(false)
+		tag = tags.P1WalkDown
+		// to-do: idle tag.
 	}
+	this.SetTag(tag)
+	if !idle {
+		this.SetFlipX(in.Dir.X < 0)
+	}
+	this.Anim.Update(gam.Atlas(), gam.DeltaMs())
 	layer := gam.Layer(this.Z.Layer())
 	if layer.Clip.HitsBox(vgeo.XYWH(
 		this.X, this.Y, float32(this.W), float32(this.H),
 	)) {
-		spr := this.Spr
-		if idle {
-			// to-do: set idle tag.
-			spr.Pause(gam.NowMillis())
-		}
-		layer.Sprs = append(layer.Sprs, spr)
+		layer.Sprs = append(layer.Sprs, this.Spr)
 	}
 	if !idle {
 		return veng.Loop

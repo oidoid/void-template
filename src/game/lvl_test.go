@@ -36,7 +36,7 @@ func TestPlayButtonRoutesToLvl0(t *testing.T) {
 		t.Fatalf("P1 sprite count = %d, want %d", got, want)
 	}
 	spawn := boards.Lvl0P1Spawns[0]
-	if p1Sprs[0].Tag() != spawn.Tag || p1Sprs[0].WH != spawn.WH.Cast[uint16]() {
+	if p1Sprs[0].Tag != spawn.Tag || p1Sprs[0].WH != spawn.WH.Cast[uint16]() {
 		t.Fatalf("P1 sprite does not match its Tiled representation: %v", p1Sprs[0])
 	}
 	if p1Sprs[0].XY != boards.Lvl0P1Spawns[0].XY {
