@@ -16,7 +16,7 @@ func routeTitle(gam *Game) *titleLvl {
 		if spawn.Hidden {
 			continue
 		}
-		gam.Texts().Add(veng.NewTextEnt(spawn))
+		gam.Texts().Add(veng.NewTextEnt(spawn, gam.Font()))
 	}
 	this := &titleLvl{playButton: NewPlayButtonEnt()}
 	gam.Router().Update = this.update

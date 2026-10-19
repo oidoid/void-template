@@ -32,6 +32,7 @@ var TitleTextSpawns = [...]TextSpawn{
 			Z:   17,
 			Pal: 5,
 		},
-		Text: "void-template",
+		Text:   "void-template",
+		SizePx: 6,
 	},
 }
