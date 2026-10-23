@@ -79,7 +79,7 @@ fmt-web: link-void; npx lint --fix > /dev/null
 install:; go mod download; npm install; $(MAKE) link-void
 link-void:
 	if [ -d ../void ]; then
-		printf 'go 1.27.1\n\nuse (\n\t.\n\t../void\n)\n' > go.work
+		printf 'go %s\n\nuse (\n\t.\n\t../void\n)\n' "$$(sed -n 's/^go //p' go.mod)" > go.work
 	fi
 	void_dir=$$(go list -m -f '{{.Dir}}' $(void_module))
 	npm install \
