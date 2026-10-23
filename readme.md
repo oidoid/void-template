@@ -4,7 +4,8 @@ skeleton for [void](https://github.com/oidoid/void) games.
 
 ## Development
 
-for engine development, keep void as a sibling directory.
+for engine development, keep void as a sibling directory. `make install` and
+`make link-void` create a Go workspace and link the sibling's web package. run `GOWORK=off make` to build with pinned version.
 
 ### Native Dependencies
 

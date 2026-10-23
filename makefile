@@ -39,7 +39,7 @@ favicon = \
 		cwebp -exact -lossless -mt -quiet -z 9 $$favicon.png -o $$favicon.webp; \
 	done
 
-.PHONY: bench build build-atlas build-boards build-favicon build-go build-web check clean dependencies fat-analyze fat-check fat-save fmt fmt-go fmt-mod fmt-web install link-void lint lint-critic lint-static lint-vet lint-web test test-fmt-go test-fmt-mod test-go test-web typecheck-web watch watch-atlas watch-boards watch-go watch-web
+.PHONY: bench build build-atlas build-boards build-favicon build-go build-web clean dependencies fat-analyze fat-check fat-save fmt fmt-go fmt-mod fmt-web install link-void lint lint-critic lint-static lint-vet lint-web test test-fmt-go test-fmt-mod test-go test-web typecheck-web watch watch-atlas watch-boards watch-go watch-web
 
 watch: export DEBUG := 1
 watch: dependencies build-atlas .WAIT build-boards build-favicon .WAIT watch-go watch-atlas watch-boards watch-web
@@ -96,8 +96,7 @@ lint-static:; go tool staticcheck ./src/...
 lint-vet:; go vet ./src/...
 lint-web: link-void; npx lint > /dev/null
 
-check: test-fmt-go test-fmt-mod lint test-go test-web typecheck-web
-test: dependencies .WAIT build .WAIT check .WAIT fat-check
+test: dependencies .WAIT build .WAIT test-fmt-go test-fmt-mod lint test-go test-web typecheck-web .WAIT fat-check
 test-fmt-go:
 	out=$$(go fmt ./src/...)
 	[ -z "$$out" ] || { printf >&2 "unformatted files:\n%s\n" "$$out"; false; }
