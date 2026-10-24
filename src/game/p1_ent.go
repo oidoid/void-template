@@ -2,14 +2,17 @@ package game
 
 import (
 	"github.com/oidoid/void-template/src/tags"
+	"github.com/oidoid/void/src/void/vatlas"
 	"github.com/oidoid/void/src/void/vboards"
 	"github.com/oidoid/void/src/void/veng"
 	"github.com/oidoid/void/src/void/vgeo"
 	"github.com/oidoid/void/src/void/vgfx"
-	"github.com/oidoid/void/src/void/vmath"
 )
 
-const p1Vel = float32(32)
+const (
+	p1Vel     = float32(32)
+	p1MaxMove = float32(8)
+)
 
 type P1Ent struct {
 	vgfx.Anim
@@ -23,15 +26,6 @@ func (this *P1Ent) Update(gam *Game) veng.Status {
 	dir := gam.In().Dir
 	idle := dir == (vgeo.XY[int8]{})
 	xy := this.XY
-	by := p1Vel * float32(gam.DeltaSecs())
-	this.X += float32(dir.X) * by
-	this.Y += float32(dir.Y) * by
-	this.X = vmath.Clamp(0, max(float32(gam.Board().W)-float32(this.W), 0), this.X)
-	this.Y = vmath.Clamp(0, max(float32(gam.Board().H)-float32(this.H), 0), this.Y)
-	// prefer vertical animation when a board edge blocks horizontal movement.
-	if this.X == xy.X && this.Y != xy.Y {
-		dir.X = 0
-	}
 	tag := this.Tag
 	switch {
 	case dir.X != 0:
@@ -42,8 +36,36 @@ func (this *P1Ent) Update(gam *Game) veng.Status {
 		tag = tags.P1WalkDown
 		// to-do: idle tag.
 	}
-	this.SetTag(tag)
-	if !idle {
+	by := min(p1Vel*float32(gam.DeltaSecs()), p1MaxMove)
+	if dir.X != 0 {
+		next := this.XY
+		next.X += float32(dir.X) * by
+		if !this.hitsWall(gam, next, tag) {
+			this.X = next.X
+		}
+	}
+	if dir.Y != 0 {
+		moveTag := tag
+		// prefer vertical animation when a wall blocks horizontal movement.
+		if this.X == xy.X {
+			moveTag = tags.P1WalkDown
+			if dir.Y < 0 {
+				moveTag = tags.P1WalkUp
+			}
+		}
+		next := this.XY
+		next.Y += float32(dir.Y) * by
+		if !this.hitsWall(gam, next, moveTag) {
+			this.Y = next.Y
+			if this.X == xy.X {
+				tag = moveTag
+				dir.X = 0
+			}
+		}
+	}
+	// preserve facing when no movement.
+	if this.XY != xy {
+		this.SetTag(tag)
 		this.SetFlipX(dir.X < 0)
 	}
 	delta := gam.DeltaMs()
@@ -61,4 +83,12 @@ func (this *P1Ent) Update(gam *Game) veng.Status {
 		return veng.Loop
 	}
 	return veng.Pause
+}
+
+func (this *P1Ent) hitsWall(
+	gam *Game, xy vgeo.XY[float32], tag vatlas.Tag,
+) bool {
+	box := gam.Atlas().Meta[tag].Hurtbox.Cast[float32]()
+	box.MoveTo(xy)
+	return gam.Board().HitsBox(box)
 }
