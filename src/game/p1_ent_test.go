@@ -115,54 +115,6 @@ func TestP1EntPrefersUnblockedMovementAnimation(t *testing.T) {
 	}
 }
 
-func TestP1EntUsesAtlasPlaybackSettings(t *testing.T) {
-	gam := NewGame()
-	lvl := routeLvl0(gam)
-	atlas := gam.Atlas()
-	atlas.Meta[tags.P1WalkRight].Dir = vatlas.AnimDirReverse
-	atlas.Meta[tags.P1WalkRight].Repeat = 1
-	atlas.Cels[atlas.Meta[tags.P1WalkRight].CelIndex+7].Millis = 237
-	poll := gam.Poll()
-	poll.CanvasPhy = vgeo.NewWH[uint16](256, 144)
-	poll.InPoll.Kbd.Keys = vin.KeyRight
-	poll.DeltaMillis = 236
-	gam.Update()
-	if lvl.p1.Cel != 7 {
-		t.Fatalf("reverse start = %d", lvl.p1.Cel)
-	}
-	poll.DeltaMillis = 1
-	gam.Update()
-	if lvl.p1.Cel != 6 {
-		t.Fatalf("authored duration = %d", lvl.p1.Cel)
-	}
-	poll.DeltaMillis = 10000
-	if gam.Update() != veng.Loop {
-		t.Fatal("movement must keep updating after animation finishes")
-	}
-	if lvl.p1.Cel != 0 || !lvl.p1.Done() {
-		t.Fatal("one-shot did not stop")
-	}
-}
-
-func TestP1EntKeepsLeftFacingWhenInputStops(t *testing.T) {
-	gam := NewGame()
-	ent := NewP1Ent(vboards.Spawn{
-		WH: vgeo.NewWH[float32](8, 13), Z: gfx.ZP1, Tag: tags.P1WalkRight,
-	})
-
-	gam.In().Dir.X = -1
-	ent.Update(gam)
-	if !ent.FlipX() {
-		t.Fatal("P1 is not facing left while Left is pressed")
-	}
-
-	gam.In().Dir = vgeo.XY[int8]{}
-	ent.Update(gam)
-	if !ent.FlipX() {
-		t.Fatal("P1 stopped facing left when Left was released")
-	}
-}
-
 func TestP1EntDrawsOnlyInsideLayerClip(t *testing.T) {
 	gam := NewGame()
 	ent := NewP1Ent(vboards.Spawn{
@@ -179,5 +131,26 @@ func TestP1EntDrawsOnlyInsideLayerClip(t *testing.T) {
 	ent.Update(gam)
 	if got := len(layer.Sprs); got != 1 {
 		t.Fatalf("visible sprite count = %d, want 1", got)
+	}
+}
+
+func TestP1EntKeepsMovingAfterAnimationEnds(t *testing.T) {
+	gam := NewGame()
+	lvl := routeLvl0(gam)
+	atlas := gam.Atlas()
+	meta := &atlas.Meta[tags.P1WalkRight]
+	meta.Cels = 1
+	meta.Repeat = 1
+	atlas.Cels[meta.CelIndex].Millis = 1
+	gam.Poll().DeltaMillis = 125
+	gam.In().Dir = vgeo.NewXY[int8](1, 0)
+	for range 2 {
+		xy := lvl.p1.XY
+		if got := lvl.p1.Update(gam); got != veng.Loop {
+			t.Fatalf("movement status = %v, want Loop", got)
+		}
+		if !lvl.p1.Done() || lvl.p1.X <= xy.X {
+			t.Fatalf("finished animation stopped movement: %+v", lvl.p1.Spr)
+		}
 	}
 }

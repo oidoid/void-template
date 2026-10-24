@@ -4,13 +4,10 @@
     "emitDeclarationOnly": true,
     "target": "ES2024",
     "module": "ESNext",
-    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "isolatedModules": true,
     "noUncheckedIndexedAccess": true,
     "erasableSyntaxOnly": true,
-    "rootDir": ".",
     "outDir": "dist/web/",
     "skipLibCheck": true,
     "lib": [

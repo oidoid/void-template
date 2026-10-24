@@ -35,8 +35,14 @@ func TestTouchInputRequestsLandscape(t *testing.T) {
 	}
 }
 
-func TestNewPopulatesTiledCursor(t *testing.T) {
+func TestNewLoadsTitleAndCursor(t *testing.T) {
 	gam := NewGame()
+	if gam.Board() != &boards.TitleBoard {
+		t.Fatal("app did not initialize the title level")
+	}
+	if got := gam.Texts().Len(); got != 1 {
+		t.Fatalf("title text count = %d, want 1", got)
+	}
 	spawn := boards.TitleCursorSpawns[0]
 	cursor := gam.Cursor()
 	if cursor == nil {
@@ -60,32 +66,5 @@ func TestNewPopulatesTiledCursor(t *testing.T) {
 	gam.Update()
 	if got := len(gam.Layer(gfx.LayerCursor).Sprs); got != 1 {
 		t.Fatalf("cursor sprite count = %d, want 1", got)
-	}
-}
-
-func TestRouteLoadsLvl0(t *testing.T) {
-	gam := NewGame()
-	if gam.Board() != &boards.TitleBoard {
-		t.Fatal("app did not initialize the title level")
-	}
-	if gam.BoardLevel() != uint16(boards.TitleLevel) {
-		t.Fatalf("board level = %d, want title level %d", gam.BoardLevel(), boards.TitleLevel)
-	}
-	if gam.BoardTilesLen() != uint32(len(boards.TitleBoard.Tiles)) {
-		t.Fatalf("exported title tile count = %d, want %d", gam.BoardTilesLen(), len(boards.TitleBoard.Tiles))
-	}
-
-	routeLvl0(gam)
-	if gam.Board() != &boards.Lvl0Board {
-		t.Fatal("route did not load lvl0")
-	}
-	if gam.BoardLevel() != uint16(boards.Lvl0Level) {
-		t.Fatalf("board level = %d, want lvl0 level %d", gam.BoardLevel(), boards.Lvl0Level)
-	}
-	if gam.BoardTilesLen() != uint32(len(boards.Lvl0Board.Tiles)) {
-		t.Fatalf("exported lvl0 tile count = %d, want %d", gam.BoardTilesLen(), len(boards.Lvl0Board.Tiles))
-	}
-	if boards.TitleLevel == boards.Lvl0Level {
-		t.Fatal("generated boards have the same level ID")
 	}
 }

@@ -10,17 +10,6 @@ import (
 	"github.com/oidoid/void/src/void/vin"
 )
 
-func TestTextLifecycle(t *testing.T) {
-	gam := NewGame()
-	if got, want := gam.Texts().Len(), 1; got != want {
-		t.Fatalf("title text count = %d, want %d", got, want)
-	}
-	routeLvl0(gam)
-	if got := gam.Texts().Len(); got != 0 {
-		t.Fatalf("lvl0 text count = %d, want 0", got)
-	}
-}
-
 func TestPlayButtonRoutesToLvl0(t *testing.T) {
 	gam := NewGame()
 	gam.Poll().CanvasPhy = vgeo.NewWH[uint16](256, 144)
@@ -29,6 +18,9 @@ func TestPlayButtonRoutesToLvl0(t *testing.T) {
 	clickButton(gam, &titleLvl.playButton.ButtonEnt)
 	if gam.Board() != &boards.Lvl0Board {
 		t.Fatal("Play button did not route to lvl0")
+	}
+	if got := gam.Texts().Len(); got != 0 {
+		t.Fatalf("lvl0 text count = %d, want 0", got)
 	}
 	gam.Update()
 	p1Sprs := gam.Layer(gfx.LayerP1).Sprs
@@ -52,6 +44,12 @@ func TestTitleButtonRoutesToTitle(t *testing.T) {
 	gam := NewGame()
 	gam.Poll().CanvasPhy = vgeo.NewWH[uint16](256, 144)
 	lvl0 := routeLvl0(gam)
+	if gam.Board() != &boards.Lvl0Board {
+		t.Fatal("route did not load lvl0")
+	}
+	if got := gam.Texts().Len(); got != 0 {
+		t.Fatalf("lvl0 text count = %d, want 0", got)
+	}
 	gam.Update()
 
 	ui := gam.Layer(gfx.LayerUI)
