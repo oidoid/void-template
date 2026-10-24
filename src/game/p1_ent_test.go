@@ -40,27 +40,27 @@ func TestP1EntSlidesAcrossTileSeams(t *testing.T) {
 		wallCol  bool
 		wallCell int
 	}{
-		{"right wall down", vgeo.NewXY[float32](56, 32),
+		{"right wall down", vgeo.NewXY[float32](57, 32),
 			vgeo.NewXY[int8](0, 1), true, 4},
-		{"right wall up", vgeo.NewXY[float32](56, 80),
+		{"right wall up", vgeo.NewXY[float32](57, 80),
 			vgeo.NewXY[int8](0, -1), true, 4},
 		{"left wall down", vgeo.NewXY[float32](63, 32),
 			vgeo.NewXY[int8](0, 1), true, 3},
 		{"left wall up", vgeo.NewXY[float32](63, 80),
 			vgeo.NewXY[int8](0, -1), true, 3},
-		{"bottom wall right", vgeo.NewXY[float32](32, 50),
+		{"bottom wall right", vgeo.NewXY[float32](32, 51),
 			vgeo.NewXY[int8](1, 0), false, 4},
-		{"bottom wall left", vgeo.NewXY[float32](80, 50),
+		{"bottom wall left", vgeo.NewXY[float32](80, 51),
 			vgeo.NewXY[int8](-1, 0), false, 4},
 		{"top wall right", vgeo.NewXY[float32](32, 60),
 			vgeo.NewXY[int8](1, 0), false, 3},
 		{"top wall left", vgeo.NewXY[float32](80, 60),
 			vgeo.NewXY[int8](-1, 0), false, 3},
-		{"hold into right wall", vgeo.NewXY[float32](56, 32),
+		{"hold into right wall", vgeo.NewXY[float32](57, 32),
 			vgeo.NewXY[int8](1, 1), true, 4},
 		{"hold into left wall", vgeo.NewXY[float32](63, 32),
 			vgeo.NewXY[int8](-1, 1), true, 3},
-		{"hold into bottom wall", vgeo.NewXY[float32](32, 50),
+		{"hold into bottom wall", vgeo.NewXY[float32](32, 51),
 			vgeo.NewXY[int8](1, 1), false, 4},
 		{"hold into top wall", vgeo.NewXY[float32](32, 60),
 			vgeo.NewXY[int8](1, -1), false, 3},
@@ -220,8 +220,8 @@ func TestP1EntPrefersUnblockedMovementAnimation(t *testing.T) {
 	}
 	gam.SetBoard(&board)
 	hurtbox := gam.Atlas().Meta[tags.P1WalkRight].Hurtbox.Cast[float32]()
-	minX, maxX := -hurtbox.Min.X, 127-hurtbox.Max.X
-	minY, maxY := -hurtbox.Min.Y, 127-hurtbox.Max.Y
+	minX, maxX := -hurtbox.Min.X, 128-hurtbox.Max.X
+	minY, maxY := -hurtbox.Min.Y, 128-hurtbox.Max.Y
 	gam.Poll().DeltaMillis = 125
 
 	for _, test := range []struct {
@@ -245,8 +245,8 @@ func TestP1EntPrefersUnblockedMovementAnimation(t *testing.T) {
 		{"free down left", 32, 32, -1, 1, 28, 36, tags.P1WalkRight, true, false},
 		{"free down right", 32, 32, 1, 1, 36, 36, tags.P1WalkRight, false, false},
 		{"blocked corner", minX, minY, -1, -1, minX, minY, tags.P1WalkRight, true, false},
-		{"solid right up", 47 - hurtbox.Max.X, 49, 1, -1, 47 - hurtbox.Max.X, 45, tags.P1WalkUp, false, true},
-		{"solid right down", 47 - hurtbox.Max.X, 49, 1, 1, 47 - hurtbox.Max.X, 53, tags.P1WalkDown, false, true},
+		{"solid right up", 48 - hurtbox.Max.X, 49, 1, -1, 48 - hurtbox.Max.X, 45, tags.P1WalkUp, false, true},
+		{"solid right down", 48 - hurtbox.Max.X, 49, 1, 1, 48 - hurtbox.Max.X, 53, tags.P1WalkDown, false, true},
 		{"solid left down", 64 - hurtbox.Min.X, 49, -1, 1, 64 - hurtbox.Min.X, 53, tags.P1WalkDown, false, true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -287,7 +287,7 @@ func TestP1EntKeepsAnimatingWhileSliding(t *testing.T) {
 	})
 	hurtbox := gam.Atlas().Meta[tags.P1WalkRight].Hurtbox
 	ent := NewP1Ent(vboards.Spawn{
-		XY:  vgeo.NewXY(128-float32(hurtbox.Max.X)-0.001, 32),
+		XY:  vgeo.NewXY(128-float32(hurtbox.Max.X), 32),
 		WH:  vgeo.NewWH[float32](8, 13),
 		Z:   gfx.ZP1,
 		Tag: tags.P1WalkRight,
@@ -319,9 +319,9 @@ func TestP1EntKeepsFacingWhenCornerBlocksMovement(t *testing.T) {
 					Tile:  vgeo.NewWH[uint8](16, 16),
 					Tiles: make([]vboards.Tile, 64),
 				}
-				lo, hi := float32(0), float32(127)
+				lo, hi := float32(0), float32(128)
 				if solid {
-					lo, hi = 16, 111
+					lo, hi = 16, 112
 					for i := range 8 {
 						for _, cell := range []int{i, 56 + i, i * 8, i*8 + 7} {
 							board.Tiles[cell] = vboards.NewTile(1, true)
