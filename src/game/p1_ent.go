@@ -27,7 +27,7 @@ func (this *P1Ent) Update(gam *Game) veng.Status {
 	in := gam.In()
 	dir := in.Dir
 	idle := dir == (vgeo.XY[int8]{})
-	xy := this.XY.Round()
+	xy := vgeo.RoundXY(this.XY)
 	tag := this.Tag
 	switch {
 	case dir.X != 0:
@@ -107,6 +107,6 @@ func (this *P1Ent) hitsWall(
 	gam *Game, xy vgeo.XY[float32], tag vatlas.Tag,
 ) bool {
 	box := gam.Atlas().Meta[tag].Hurtbox.Cast[float32]()
-	box.MoveTo(xy.Round())
+	box.MoveTo(vgeo.RoundXY(xy))
 	return gam.Board().HitsBox(box)
 }
