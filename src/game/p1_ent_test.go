@@ -13,104 +13,249 @@ import (
 )
 
 func TestP1EntCapsLongFrames(t *testing.T) {
-	gam := NewGame()
-	board := vboards.Board{
-		WH:    vgeo.NewWH[int32](128, 128),
-		Tile:  vgeo.NewWH[uint8](16, 16),
-		Tiles: make([]vboards.Tile, 64),
-	}
-	gam.SetBoard(&board)
+	gam, ent := newP1Test(vgeo.NewXY[float32](32, 32))
 	gam.In().Dir = vgeo.NewXY[int8](1, 1)
 	gam.Poll().DeltaMillis = 3000
-	ent := NewP1Ent(vboards.Spawn{
-		XY: vgeo.NewXY[float32](32, 32), WH: vgeo.NewWH[float32](8, 13),
-		Z: gfx.ZP1, Tag: tags.P1WalkRight,
-	})
 	ent.Update(gam)
 	if want := vgeo.NewXY[float32](40, 40); ent.XY != want {
-		t.Fatalf("P1 position after a long frame = %v, want %v", ent.XY, want)
+		t.Fatalf("position after a long frame = %v, want %v", ent.XY, want)
+	}
+}
+
+func TestP1EntHitsWallUsesDrawnOrigin(t *testing.T) {
+	gam, ent := newP1Test(vgeo.NewXY[float32](32, 32))
+	for y := range 8 {
+		gam.Board().Tiles[y*8+4] = vboards.NewTile(1, true)
+	}
+	box := gam.Atlas().Meta[ent.Tag].Hurtbox.Cast[float32]()
+	lo, hi := -box.Min.X, 64-box.Max.X
+	for _, test := range []struct {
+		name string
+		x    float32
+		want bool
+	}{
+		{"right before rounding", hi + .49, false},
+		{"right rounded overlap", hi + .5, true},
+		{"left half tie", lo - .5, false},
+		{"left rounded overlap", lo - .51, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if got := ent.hitsWall(gam, vgeo.NewXY(test.x, float32(32)),
+				tags.P1WalkRight); got != test.want {
+				t.Fatalf("hitsWall(%v) = %v, want %v", test.x, got, test.want)
+			}
+		})
+	}
+}
+
+func TestP1EntSynchronizesDiagonalAfterCardinalMovement(t *testing.T) {
+	gam, ent := newP1Test(vgeo.NewXY[float32](32, 32))
+	for i, move := range []struct {
+		dx, dy           int8
+		by, wantX, wantY float32
+	}{
+		{1, 0, .25, 32, 32},
+		{1, -1, .25, 32, 32},
+		{1, -1, .5, 32, 32},
+		{1, -1, .25, 33, 31},
+		{1, -1, 1, 34, 30},
+
+		{-1, 0, .25, 34, 30},
+		{-1, -1, .25, 34, 30},
+		{-1, -1, .5, 34, 30},
+		{-1, -1, .25, 33, 29},
+		{-1, -1, 1, 32, 28},
+
+		{-1, 0, .25, 32, 28},
+		{-1, 1, .25, 32, 28},
+		{-1, 1, .5, 32, 28},
+		{-1, 1, .25, 31, 29},
+		{-1, 1, 1, 30, 30},
+
+		{1, 0, .25, 30, 30},
+		{1, 1, .25, 30, 30},
+		{1, 1, .5, 30, 30},
+		{1, 1, .25, 31, 31},
+		{1, 1, 1, 32, 32},
+	} {
+		stepP1Test(t, gam, &ent, vgeo.NewXY(move.dx, move.dy), move.by)
+		want := vgeo.NewXY(move.wantX, move.wantY)
+		if ent.XY != want || ent.Tag != tags.P1WalkRight ||
+			ent.FlipX() != (move.dx < 0) {
+			t.Fatalf("move %d: sprite %+v, want position %v and horizontal facing",
+				i, ent.Spr, want)
+		}
+	}
+}
+
+func TestP1EntResetsChangedMovementAxes(t *testing.T) {
+	gam, ent := newP1Test(vgeo.NewXY[float32](32, 32))
+	for i, move := range []struct {
+		dx, dy   int8
+		by, x, y float32
+	}{
+		{1, 0, .75, 32, 32},
+		{1, 1, .25, 32, 32},
+		{-1, -1, .25, 32, 32},
+		{-1, -1, .75, 31, 31},
+		{0, 0, 1, 31, 31},
+		{1, 0, .5, 31, 31},
+		{0, 0, 0, 31, 31},
+		{1, 0, .5, 31, 31},
+		{1, 0, .5, 32, 31},
+	} {
+		stepP1Test(t, gam, &ent, vgeo.NewXY(move.dx, move.dy), move.by)
+		if want := vgeo.NewXY(move.x, move.y); ent.XY != want {
+			t.Fatalf("move %d: position %v, want %v", i, ent.XY, want)
+		}
 	}
 }
 
 func TestP1EntSlidesAcrossTileSeams(t *testing.T) {
 	for _, test := range []struct {
 		name     string
-		xy       vgeo.XY[float32]
-		dir      vgeo.XY[int8]
+		dx, dy   int8
 		wallCol  bool
 		wallCell int
+		tag      vatlas.Tag
+		flip     bool
 	}{
-		{"right wall down", vgeo.NewXY[float32](57, 32),
-			vgeo.NewXY[int8](0, 1), true, 4},
-		{"right wall up", vgeo.NewXY[float32](57, 80),
-			vgeo.NewXY[int8](0, -1), true, 4},
-		{"left wall down", vgeo.NewXY[float32](63, 32),
-			vgeo.NewXY[int8](0, 1), true, 3},
-		{"left wall up", vgeo.NewXY[float32](63, 80),
-			vgeo.NewXY[int8](0, -1), true, 3},
-		{"bottom wall right", vgeo.NewXY[float32](32, 51),
-			vgeo.NewXY[int8](1, 0), false, 4},
-		{"bottom wall left", vgeo.NewXY[float32](80, 51),
-			vgeo.NewXY[int8](-1, 0), false, 4},
-		{"top wall right", vgeo.NewXY[float32](32, 60),
-			vgeo.NewXY[int8](1, 0), false, 3},
-		{"top wall left", vgeo.NewXY[float32](80, 60),
-			vgeo.NewXY[int8](-1, 0), false, 3},
-		{"hold into right wall", vgeo.NewXY[float32](57, 32),
-			vgeo.NewXY[int8](1, 1), true, 4},
-		{"hold into left wall", vgeo.NewXY[float32](63, 32),
-			vgeo.NewXY[int8](-1, 1), true, 3},
-		{"hold into bottom wall", vgeo.NewXY[float32](32, 51),
-			vgeo.NewXY[int8](1, 1), false, 4},
-		{"hold into top wall", vgeo.NewXY[float32](32, 60),
-			vgeo.NewXY[int8](1, -1), false, 3},
+		{"right wall up", 1, -1, true, 4, tags.P1WalkUp, false},
+		{"left wall down", -1, 1, true, 3, tags.P1WalkDown, false},
+		{"bottom wall left", -1, 1, false, 4, tags.P1WalkRight, true},
+		{"top wall right", 1, -1, false, 3, tags.P1WalkRight, false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			gam := NewGame()
-			board := vboards.Board{
-				WH:    vgeo.NewWH[int32](160, 160),
-				Tile:  vgeo.NewWH[uint8](16, 16),
-				Tiles: make([]vboards.Tile, 100),
-			}
-			for i := range 10 {
+			gam, ent := newP1Test(vgeo.NewXY[float32](48, 48))
+			for i := range 8 {
 				x, y := i, test.wallCell
 				if test.wallCol {
 					x, y = test.wallCell, i
 				}
-				board.Tiles[y*10+x] = vboards.NewTile(1, true)
+				gam.Board().Tiles[y*8+x] = vboards.NewTile(1, true)
 			}
-			gam.SetBoard(&board)
-			gam.Poll().DeltaMillis = 125
-			ent := NewP1Ent(vboards.Spawn{
-				XY: test.xy, WH: vgeo.NewWH[float32](8, 13),
-				Z: gfx.ZP1, Tag: tags.P1WalkRight,
-			})
-			// walk into the wall before checking movement along it.
-			into := int8(1)
-			if test.wallCell == 3 {
-				into = -1
-			}
+			box := gam.Atlas().Meta[ent.Tag].Hurtbox.Cast[float32]()
+			dir := vgeo.NewXY(test.dx, test.dy)
+			free := dir
 			if test.wallCol {
-				gam.In().Dir = vgeo.NewXY(into, int8(0))
-			} else {
-				gam.In().Dir = vgeo.NewXY(int8(0), into)
-			}
-			ent.Update(gam)
-			if ent.XY != test.xy {
-				t.Fatalf("P1 entered the wall: %v, want %v", ent.XY, test.xy)
-			}
-			gam.In().Dir = test.dir
-			want := test.xy
-			for frame := range 8 {
-				if test.wallCol {
-					want.Y += float32(test.dir.Y) * 4
-				} else {
-					want.X += float32(test.dir.X) * 4
+				ent.X, free.X = 64-box.Max.X, 0
+				if test.dx < 0 {
+					ent.X = 64 - box.Min.X
 				}
-				ent.Update(gam)
-				if ent.XY != want {
-					t.Fatalf("frame %d: P1 stopped at %v, want %v",
-						frame, ent.XY, want)
+			} else {
+				ent.Y, free.Y = 64-box.Max.Y, 0
+				if test.dy < 0 {
+					ent.Y = 64 - box.Min.Y
+				}
+			}
+			start := ent.XY
+			ent.XY.AddTo(vgeo.NewXY[float32](.25, .25))
+			stepP1Test(t, gam, &ent, dir.Sub(free), 4)
+			if ent.XY != start {
+				t.Fatalf("entered the wall: %v, want %v", ent.XY, start)
+			}
+			for i, move := range []struct {
+				dir        vgeo.XY[int8]
+				by, wantBy float32
+			}{
+				{dir, .5, 0}, {dir, .5, 1}, {dir, 7, 8}, {dir, 8, 16},
+				{free, .5, 16}, {free, .5, 17}, {free, 7, 24}, {free, 8, 32},
+			} {
+				stepP1Test(t, gam, &ent, move.dir, move.by)
+				want := start.Add(free.Cast[float32]().Mul(move.wantBy))
+				if ent.XY != want || move.wantBy != 0 &&
+					(ent.Tag != test.tag || ent.FlipX() != test.flip) {
+					t.Fatalf("move %d: position %v, tag %d, flip %v; want %v, %d, %v",
+						i, ent.XY, ent.Tag, ent.FlipX(), want, test.tag, test.flip)
+				}
+			}
+		})
+	}
+}
+
+func TestP1EntResolvesDiagonalTileCorners(t *testing.T) {
+	type step struct{ by, wantX float32 }
+	for _, test := range []struct {
+		name   string
+		x, y   float32
+		dx, dy int8
+		steps  []step
+	}{
+		{"north east", 57, 76, 1, -1,
+			[]step{{.25, 57}, {.5, 57}, {.25, 58}, {1, 59}}},
+		{"north west", 79, 76, -1, -1,
+			[]step{{.25, 79}, {.5, 79}, {.25, 78}, {1, 77}}},
+		{"south west", 79, 51, -1, 1,
+			[]step{{.25, 79}, {.5, 79}, {.25, 78}, {1, 77}}},
+		{"south east", 57, 51, 1, 1,
+			[]step{{.25, 57}, {.5, 57}, {.25, 58}, {1, 59}}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			gam, ent := newP1Test(vgeo.NewXY(test.x, test.y))
+			gam.Board().Tiles[4*8+4] = vboards.NewTile(1, true)
+			for i, move := range test.steps {
+				stepP1Test(t, gam, &ent, vgeo.NewXY(test.dx, test.dy), move.by)
+				if want := vgeo.NewXY(move.wantX, test.y); ent.XY != want {
+					t.Fatalf("move %d: corner slide %v, want %v", i, ent.XY, want)
+				}
+			}
+		})
+	}
+}
+
+func TestP1EntFacingAtBlockedCorners(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		dx, dy   int8
+		vertical bool
+	}{
+		{"north east", 1, -1, true}, {"north west", -1, -1, false},
+		{"south west", -1, 1, true}, {"south east", 1, 1, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			gam, ent := newP1Test(vgeo.NewXY[float32](32, 32))
+			box := gam.Atlas().Meta[ent.Tag].Hurtbox.Cast[float32]()
+			corner := vgeo.NewXY(128-box.Max.X, 128-box.Max.Y)
+			verticalTag := tags.P1WalkDown
+			if test.dx < 0 {
+				corner.X = -box.Min.X
+			}
+			if test.dy < 0 {
+				corner.Y, verticalTag = -box.Min.Y, tags.P1WalkUp
+			}
+			ent.XY = corner
+			tag, flip := tags.P1WalkRight, test.dx < 0
+			if test.vertical {
+				ent.Y -= float32(test.dy) * 4
+				tag, flip = verticalTag, false
+			} else {
+				ent.X -= float32(test.dx) * 4
+			}
+			for _, move := range []struct {
+				name   string
+				dx, dy int8
+				tag    vatlas.Tag
+				flip   bool
+			}{
+				{"slide to corner", test.dx, test.dy, tag, flip},
+				{"hold diagonal", test.dx, test.dy, tag, flip},
+				{"release vertical", test.dx, 0, tags.P1WalkRight, test.dx < 0},
+				{"release horizontal", 0, 0, tags.P1WalkRight, test.dx < 0},
+				{"press horizontal again", test.dx, 0, tags.P1WalkRight, test.dx < 0},
+				{"press vertical", 0, test.dy, verticalTag, false},
+				{"release vertical", 0, 0, verticalTag, false},
+				{"press horizontal from idle", test.dx, 0, tags.P1WalkRight, test.dx < 0},
+			} {
+				cel := ent.Cel
+				stepP1Test(t, gam, &ent, vgeo.NewXY(move.dx, move.dy), 4)
+				if ent.XY != corner || ent.Tag != move.tag || ent.FlipX() != move.flip {
+					t.Fatalf("%s: position %v, tag %d, flip %v; want %v, %d, %v",
+						move.name, ent.XY, ent.Tag, ent.FlipX(),
+						corner, move.tag, move.flip)
+				}
+				if move.dx == 0 && move.dy == 0 && ent.Cel != cel {
+					t.Fatalf("%s: idle animation advanced from %d to %d",
+						move.name, cel, ent.Cel)
 				}
 			}
 		})
@@ -173,8 +318,7 @@ func TestP1EntPausesAndResumesAuthoredAnimation(t *testing.T) {
 }
 
 func TestP1EntKeepsMovingAfterAnimationEnds(t *testing.T) {
-	gam := NewGame()
-	lvl := routeLvl0(gam)
+	gam, ent := newP1Test(vgeo.NewXY[float32](32, 32))
 	atlas := gam.Atlas()
 	meta := &atlas.Meta[tags.P1WalkRight]
 	meta.Cels = 1
@@ -183,12 +327,31 @@ func TestP1EntKeepsMovingAfterAnimationEnds(t *testing.T) {
 	gam.Poll().DeltaMillis = 125
 	gam.In().Dir = vgeo.NewXY[int8](1, 0)
 	for range 2 {
-		xy := lvl.p1.XY
-		if got := lvl.p1.Update(gam); got != veng.Loop {
+		xy := ent.XY
+		if got := ent.Update(gam); got != veng.Loop {
 			t.Fatalf("movement status = %v, want Loop", got)
 		}
-		if !lvl.p1.Done() || lvl.p1.X <= xy.X {
-			t.Fatalf("finished animation stopped movement: %+v", lvl.p1.Spr)
+		if !ent.Done() || ent.X <= xy.X {
+			t.Fatalf("finished animation stopped movement: %+v", ent.Spr)
+		}
+	}
+}
+
+func TestP1EntKeepsAnimatingWhileSliding(t *testing.T) {
+	gam, ent := newP1Test(vgeo.NewXY[float32](32, 32))
+	box := gam.Atlas().Meta[ent.Tag].Hurtbox
+	ent.X = 128 - float32(box.Max.X)
+	for _, test := range []struct {
+		delta float64
+		cel   uint8
+	}{{150, 1}, {49, 1}, {1, 2}} {
+		gam.In().PrevDir = gam.In().Dir
+		gam.In().Dir = vgeo.NewXY[int8](1, 1)
+		gam.Poll().DeltaMillis = test.delta
+		ent.Update(gam)
+		if ent.Tag != tags.P1WalkDown || ent.Cel != test.cel {
+			t.Fatalf("sliding animation = %d, cel = %d; want %d, %d",
+				ent.Tag, ent.Cel, tags.P1WalkDown, test.cel)
 		}
 	}
 }
@@ -212,157 +375,38 @@ func TestP1EntDrawsOnlyInsideLayerClip(t *testing.T) {
 	}
 }
 
-func TestP1EntPrefersUnblockedMovementAnimation(t *testing.T) {
-	gam := NewGame()
-	board := vboards.Board{
-		WH: vgeo.NewWH[int32](128, 128), Tile: vgeo.NewWH[uint8](16, 16),
-		Tiles: make([]vboards.Tile, 64),
-	}
-	gam.SetBoard(&board)
-	hurtbox := gam.Atlas().Meta[tags.P1WalkRight].Hurtbox.Cast[float32]()
-	minX, maxX := -hurtbox.Min.X, 128-hurtbox.Max.X
-	minY, maxY := -hurtbox.Min.Y, 128-hurtbox.Max.Y
-	gam.Poll().DeltaMillis = 125
-
-	for _, test := range []struct {
-		name         string
-		x, y         float32
-		dx, dy       int8
-		wantX, wantY float32
-		tag          vatlas.Tag
-		flip, solid  bool
-	}{
-		{"left edge up", minX, 32, -1, -1, minX, 28, tags.P1WalkUp, false, false},
-		{"left edge down", minX, 32, -1, 1, minX, 36, tags.P1WalkDown, false, false},
-		{"right edge up", maxX, 32, 1, -1, maxX, 28, tags.P1WalkUp, false, false},
-		{"right edge down", maxX, 32, 1, 1, maxX, 36, tags.P1WalkDown, false, false},
-		{"top edge left", 32, minY, -1, -1, 28, minY, tags.P1WalkRight, true, false},
-		{"top edge right", 32, minY, 1, -1, 36, minY, tags.P1WalkRight, false, false},
-		{"bottom edge left", 32, maxY, -1, 1, 28, maxY, tags.P1WalkRight, true, false},
-		{"bottom edge right", 32, maxY, 1, 1, 36, maxY, tags.P1WalkRight, false, false},
-		{"free up left", 32, 32, -1, -1, 28, 28, tags.P1WalkRight, true, false},
-		{"free up right", 32, 32, 1, -1, 36, 28, tags.P1WalkRight, false, false},
-		{"free down left", 32, 32, -1, 1, 28, 36, tags.P1WalkRight, true, false},
-		{"free down right", 32, 32, 1, 1, 36, 36, tags.P1WalkRight, false, false},
-		{"blocked corner", minX, minY, -1, -1, minX, minY, tags.P1WalkRight, true, false},
-		{"solid right up", 48 - hurtbox.Max.X, 49, 1, -1, 48 - hurtbox.Max.X, 45, tags.P1WalkUp, false, true},
-		{"solid right down", 48 - hurtbox.Max.X, 49, 1, 1, 48 - hurtbox.Max.X, 53, tags.P1WalkDown, false, true},
-		{"solid left down", 64 - hurtbox.Min.X, 49, -1, 1, 64 - hurtbox.Min.X, 53, tags.P1WalkDown, false, true},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			board.Tiles[3*8+3] = 0
-			if test.solid {
-				board.Tiles[3*8+3] = vboards.NewTile(1, true)
-			}
-			ent := NewP1Ent(vboards.Spawn{
-				XY: vgeo.NewXY(test.x, test.y), WH: vgeo.NewWH[float32](8, 13),
-				Z: gfx.ZP1, Tag: tags.P1WalkRight,
-			})
-			ent.SetFlipX(true)
-			dir := vgeo.NewXY(test.dx, test.dy)
-			gam.In().Dir = dir
-			if got := ent.Update(gam); got != veng.Loop {
-				t.Fatalf("movement status = %v, want Loop", got)
-			}
-			if want := vgeo.NewXY(test.wantX, test.wantY); ent.XY != want {
-				t.Errorf("position = %v, want %v", ent.XY, want)
-			}
-			if ent.Tag != test.tag || ent.FlipX() != test.flip {
-				t.Errorf("animation = %d, flip = %v; want %d, %v",
-					ent.Tag, ent.FlipX(), test.tag, test.flip)
-			}
-			if gam.In().Dir != dir {
-				t.Errorf("input direction changed: %v, want %v", gam.In().Dir, dir)
-			}
-		})
-	}
-}
-
-func TestP1EntKeepsAnimatingWhileSliding(t *testing.T) {
+func newP1Test(xy vgeo.XY[float32]) (*Game, P1Ent) {
 	gam := NewGame()
 	gam.SetBoard(&vboards.Board{
-		WH:    vgeo.NewWH[int32](128, 128),
-		Tile:  vgeo.NewWH[uint8](16, 16),
+		WH: vgeo.NewWH[int32](128, 128), Tile: vgeo.NewWH[uint8](16, 16),
 		Tiles: make([]vboards.Tile, 64),
 	})
-	hurtbox := gam.Atlas().Meta[tags.P1WalkRight].Hurtbox
-	ent := NewP1Ent(vboards.Spawn{
-		XY:  vgeo.NewXY(128-float32(hurtbox.Max.X), 32),
-		WH:  vgeo.NewWH[float32](8, 13),
-		Z:   gfx.ZP1,
-		Tag: tags.P1WalkRight,
+	gam.Layer(gfx.ZP1.Layer()).Clip = vgeo.XYWH[float32](-16, -16, 176, 176)
+	return gam, NewP1Ent(vboards.Spawn{
+		XY: xy, WH: vgeo.NewWH[float32](8, 13),
+		Z: gfx.ZP1, Tag: tags.P1WalkRight,
 	})
-	gam.In().Dir = vgeo.NewXY[int8](1, 1)
-	for _, test := range []struct {
-		delta float64
-		cel   uint8
-	}{{150, 1}, {49, 1}, {1, 2}} {
-		gam.Poll().DeltaMillis = test.delta
-		ent.Update(gam)
-		if ent.Tag != tags.P1WalkDown || ent.Cel != test.cel {
-			t.Fatalf("sliding animation = %d, cel = %d; want %d, %d",
-				ent.Tag, ent.Cel, tags.P1WalkDown, test.cel)
-		}
-	}
 }
 
-func TestP1EntKeepsFacingWhenCornerBlocksMovement(t *testing.T) {
-	for _, solid := range []bool{false, true} {
-		for _, dir := range []vgeo.XY[int8]{
-			vgeo.NewXY[int8](1, -1), vgeo.NewXY[int8](-1, -1),
-			vgeo.NewXY[int8](1, 1), vgeo.NewXY[int8](-1, 1),
-		} {
-			for _, vertical := range []bool{false, true} {
-				gam := NewGame()
-				board := vboards.Board{
-					WH:    vgeo.NewWH[int32](128, 128),
-					Tile:  vgeo.NewWH[uint8](16, 16),
-					Tiles: make([]vboards.Tile, 64),
-				}
-				lo, hi := float32(0), float32(128)
-				if solid {
-					lo, hi = 16, 112
-					for i := range 8 {
-						for _, cell := range []int{i, 56 + i, i * 8, i*8 + 7} {
-							board.Tiles[cell] = vboards.NewTile(1, true)
-						}
-					}
-				}
-				gam.SetBoard(&board)
-				box := gam.Atlas().Meta[tags.P1WalkRight].Hurtbox.Cast[float32]()
-				corner := vgeo.NewXY(lo-box.Min.X, lo-box.Min.Y)
-				if dir.X > 0 {
-					corner.X = hi - box.Max.X
-				}
-				if dir.Y > 0 {
-					corner.Y = hi - box.Max.Y
-				}
-				start := corner
-				tag, flip := tags.P1WalkRight, dir.X < 0
-				if vertical {
-					start.Y -= float32(dir.Y) * 4
-					tag, flip = tags.P1WalkDown, false
-					if dir.Y < 0 {
-						tag = tags.P1WalkUp
-					}
-				} else {
-					start.X -= float32(dir.X) * 4
-				}
-				ent := NewP1Ent(vboards.Spawn{
-					XY: start, WH: vgeo.NewWH[float32](8, 13),
-					Z: gfx.ZP1, Tag: tags.P1WalkRight,
-				})
-				gam.In().Dir = dir
-				gam.Poll().DeltaMillis = 125
-				for frame := range 4 {
-					ent.Update(gam)
-					if ent.XY != corner || ent.Tag != tag || ent.FlipX() != flip {
-						t.Fatalf("solid %v, dir %v, vertical %v, frame %d: position %v, tag %d, flip %v; want %v, %d, %v",
-							solid, dir, vertical, frame, ent.XY, ent.Tag,
-							ent.FlipX(), corner, tag, flip)
-					}
-				}
-			}
-		}
+func stepP1Test(
+	t *testing.T, gam *Game, ent *P1Ent, dir vgeo.XY[int8], by float32,
+) {
+	t.Helper()
+	layer := gam.Layer(gfx.ZP1.Layer())
+	layer.Sprs = layer.Sprs[:0]
+	in := gam.In()
+	in.PrevDir, in.Dir = in.Dir, dir
+	gam.Poll().DeltaMillis = float64(by/p1Vel) * 1000
+	ent.Update(gam)
+	if in.Dir != dir {
+		t.Fatalf("input direction changed: %v, want %v", in.Dir, dir)
+	}
+	if len(layer.Sprs) != 1 || layer.Sprs[0].XY != ent.XY {
+		t.Fatalf("drawn sprite differs from the resolved position: %v", layer.Sprs)
+	}
+	box := gam.Atlas().Meta[ent.Tag].Hurtbox.Cast[float32]()
+	box.MoveTo(layer.Sprs[0].XY)
+	if gam.Board().HitsBox(box) {
+		t.Fatalf("drawn sprite overlaps a wall: %v", box)
 	}
 }

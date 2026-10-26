@@ -16,16 +16,18 @@ const (
 
 type P1Ent struct {
 	vgfx.Anim
+	xy vgeo.XY[float32] // layer px.
 }
 
 func NewP1Ent(spawn vboards.Spawn) P1Ent {
-	return P1Ent{Anim: vgfx.Anim{Spr: spawn.Spr()}}
+	return P1Ent{Spr: spawn.Spr()}
 }
 
 func (this *P1Ent) Update(gam *Game) veng.Status {
-	dir := gam.In().Dir
+	in := gam.In()
+	dir := in.Dir
 	idle := dir == (vgeo.XY[int8]{})
-	xy := this.XY
+	xy := this.XY.Round()
 	tag := this.Tag
 	switch {
 	case dir.X != 0:
@@ -36,35 +38,51 @@ func (this *P1Ent) Update(gam *Game) veng.Status {
 		tag = tags.P1WalkDown
 		// to-do: idle tag.
 	}
-	by := min(p1Vel*float32(gam.DeltaSecs()), p1MaxMove)
+	step := min(p1Vel*float32(gam.DeltaSecs()), p1MaxMove)
+	by := vgeo.NewXY(float32(dir.X)*step, float32(dir.Y)*step)
+	if dir.X != in.PrevDir.X {
+		this.xy.X = 0
+	}
+	if dir.Y != in.PrevDir.Y {
+		this.xy.Y = 0
+	}
+	this.xy.AddTo(by)
 	if dir.X != 0 {
-		next := this.XY
-		next.X += float32(dir.X) * by
-		if !this.hitsWall(gam, next, tag) {
-			this.X = next.X
+		probe := vgfx.SnapMove(xy.Add(this.xy), xy, vgeo.NewXY(by.X, float32(0)))
+		if probe.X == xy.X {
+			probe.X += float32(dir.X)
+		}
+		if this.hitsWall(gam, probe, tag) {
+			by.X, this.xy.X = 0, 0
 		}
 	}
+	next := vgfx.SnapMove(xy.Add(this.xy), xy, by)
 	if dir.Y != 0 {
 		moveTag := tag
 		// prefer vertical animation when a wall blocks horizontal movement.
-		if this.X == xy.X {
+		if by.X == 0 {
 			moveTag = tags.P1WalkDown
 			if dir.Y < 0 {
 				moveTag = tags.P1WalkUp
 			}
 		}
-		next := this.XY
-		next.Y += float32(dir.Y) * by
-		if !this.hitsWall(gam, next, moveTag) {
-			this.Y = next.Y
-			if this.X == xy.X {
-				tag = moveTag
-				dir.X = 0
-			}
+		probe := vgfx.SnapMove(xy.Add(this.xy), xy, vgeo.NewXY(float32(0), by.Y))
+		probe.X = next.X
+		if probe.Y == xy.Y {
+			probe.Y += float32(dir.Y)
+		}
+		if this.hitsWall(gam, probe, moveTag) {
+			by.Y, this.xy.Y = 0, 0
+			next = vgfx.SnapMove(xy.Add(this.xy), xy, by)
+		} else if by.X == 0 {
+			tag = moveTag
+			dir.X = 0
 		}
 	}
-	// preserve facing when no movement.
-	if this.XY != xy {
+	this.xy = this.xy.Sub(next.Sub(xy))
+	this.XY = next
+	// single-axis input chooses facing; blocked diagonals keep the last facing.
+	if this.XY != xy || !idle && (dir.X == 0 || dir.Y == 0) {
 		this.SetTag(tag)
 		this.SetFlipX(dir.X < 0)
 	}
@@ -89,6 +107,6 @@ func (this *P1Ent) hitsWall(
 	gam *Game, xy vgeo.XY[float32], tag vatlas.Tag,
 ) bool {
 	box := gam.Atlas().Meta[tag].Hurtbox.Cast[float32]()
-	box.MoveTo(xy)
+	box.MoveTo(xy.Round())
 	return gam.Board().HitsBox(box)
 }
