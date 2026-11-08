@@ -14,10 +14,10 @@ func TestTouchInputRequestsLandscape(t *testing.T) {
 	tests := []struct {
 		name   string
 		device vin.PtrDevice
-		want   veng.FullscreenReq
+		want   veng.WindowMode
 	}{
-		{name: "mouse", device: vin.PtrDevMouse, want: veng.FullscreenReqNone},
-		{name: "touch", device: vin.PtrDevTouch, want: veng.FullscreenReqLandscape},
+		{name: "mouse", device: vin.PtrDevMouse, want: veng.Windowed},
+		{name: "touch", device: vin.PtrDevTouch, want: veng.FullscreenLandscape},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -28,8 +28,8 @@ func TestTouchInputRequestsLandscape(t *testing.T) {
 				Device: test.device, Primary: true, Clicks: vin.ClickPrimary,
 			}
 			gam.Update()
-			if got := gam.FullscreenReq(); got != int32(test.want) {
-				t.Fatalf("fullscreen request = %d, want %d", got, test.want)
+			if got := gam.WindowMode(); got != test.want {
+				t.Fatalf("window mode = %d, want %d", got, test.want)
 			}
 		})
 	}

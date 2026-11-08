@@ -8,7 +8,7 @@ import (
 func UpdateFullscreen(gam *Game) veng.Status {
 	in := gam.In()
 	if in.Ptr.Device() == vin.PtrDevTouch && in.On&^in.PrevOn != 0 {
-		gam.ReqFullscreen(veng.FullscreenReqLandscape)
+		gam.SetWindowMode(veng.FullscreenLandscape)
 	}
 	return veng.Pause
 }
