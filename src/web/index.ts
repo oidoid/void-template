@@ -1,4 +1,3 @@
-// biome-ignore lint/correctness/noUndeclaredDependencies: installed via `link-void`.
 import * as V from '@oidoid/void'
 import wasm from '../../dist/index.wasm' with {type: 'url'}
 

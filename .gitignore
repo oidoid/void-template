@@ -1,5 +1,5 @@
 /dist/
-/node_modules/
+node_modules/
 *.tiled-session
 /go.work
 /go.work.sum

@@ -24,7 +24,7 @@ tinygo_flags += --trimpath $(go_tags) --ldflags="-X github.com/oidoid/void-templ
 # defer initializer loops to runtime in debug builds for faster rebuilds.
 tinygo_flags += $(if $(value DEBUG),--interp-loop-limit=1,)
 # $(1) flags
-pack = go tool $(void_module)/src/cmd/pack --out=dist/ --tsconfig=tsconfig.json $(1) src/web/assets/index.html
+pack = go tool $(void_module)/src/cmd/pack --out=dist/ --tsconfig=tsconfig.web.json $(1) src/web/assets/index.html
 # $(1) flags
 packatlas = go tool packatlas --name=atlas --img-out=dist/ --atlas-out=src/assets/atlas_bin.go --tags-out=src/tags/tags.go --tileset-manifest-out=$(tileset_manifest) $(1) src/assets/atlas/
 # $(1) flags
@@ -39,7 +39,7 @@ favicon = \
 		cwebp -exact -lossless -mt -quiet -z 9 $$favicon.png -o $$favicon.webp; \
 	done
 
-.PHONY: bench build build-atlas build-boards build-favicon build-go build-web clean dependencies fat-analyze fat-check fat-save fmt fmt-go fmt-mod fmt-web install link-void lint lint-critic lint-static lint-vet lint-web test test-fmt-go test-fmt-mod test-go test-web typecheck-web watch watch-atlas watch-boards watch-go watch-web
+.PHONY: bench build build-atlas build-boards build-favicon build-go build-web clean dependencies fat-analyze fat-check fat-save fmt fmt-go fmt-mod fmt-web install link-void lint lint-critic lint-static lint-vet lint-web test test-fmt-go test-fmt-mod test-fmt-web test-go test-web typecheck-web watch watch-atlas watch-boards watch-go watch-web
 
 watch: export DEBUG := 1
 watch: dependencies build-atlas .WAIT build-boards build-favicon .WAIT watch-go watch-atlas watch-boards watch-web
@@ -61,7 +61,7 @@ build-web: build-go link-void; $(call pack,--minify --one-file)
 clean:; rm --force --recursive dist/ src/assets/atlas_bin.go src/boards/ src/tags/tags.go
 
 dependencies:
-	for exe in aseprite cwebp go mono node shader_minifier.exe tinygo wasm-opt watchexec; do
+	for exe in aseprite bun cwebp go mono shader_minifier.exe tinygo wasm-opt watchexec; do
 		command -v $$exe > /dev/null || { echo "no $$exe" >&2; false; }
 	done
 
@@ -74,37 +74,32 @@ fat-save:; $(fat) save $(fat_files)
 fmt: fmt-mod fmt-go fmt-web
 fmt-mod:; go mod tidy
 fmt-go:; go fmt ./src/...
-fmt-web: link-void; npx lint --fix > /dev/null
+fmt-web:; bun fmt --log-level=warn
 
-install:; go mod download; npm install; $(MAKE) link-void
+install:; go mod download; bun install $(if $(value V),,--silent); $(MAKE) link-void
 link-void:
 	if [ -d ../void ]; then
 		printf 'go %s\n\nuse (\n\t.\n\t../void\n)\n' "$$(sed -n 's/^go //p' go.mod)" > go.work
 	fi
+	# symlink the Go module's web package; `bun add` would copy it.
 	void_dir=$$(go list -m -f '{{.Dir}}' $(void_module))
-	npm install \
-		--no-audit \
-		--no-fund \
-		--no-save \
-		--package-lock=false \
-		--install-links=false \
-		"$$void_dir/src/void/vweb"
+	mkdir --parents node_modules/@oidoid/
+	ln --force --no-dereference --symbolic "$$void_dir/src/void/vweb" node_modules/@oidoid/void
 
 lint: lint-critic lint-static lint-vet lint-web
 lint-critic:; go tool go-critic check --enableAll --disable=unnamedResult ./src/...
 lint-static:; go tool staticcheck ./src/...
 lint-vet:; go vet ./src/...
-lint-web: link-void; npx lint > /dev/null
+lint-web: link-void; bun lint
 
-test: dependencies .WAIT build .WAIT test-fmt-go test-fmt-mod lint test-go test-web typecheck-web .WAIT fat-check
+test: dependencies .WAIT build .WAIT test-fmt-go test-fmt-mod test-fmt-web lint test-go test-web typecheck-web .WAIT fat-check
 test-fmt-go:
 	out=$$(go fmt ./src/...)
 	[ -z "$$out" ] || { printf >&2 "unformatted files:\n%s\n" "$$out"; false; }
 test-fmt-mod:; go mod tidy -diff
+test-fmt-web:; bun fmt --check
 test-go:; go test $(go_tags) ./src/... | $(go_test_filter)
-test-web: link-void
-	FORCE_COLOR=3 npm run test:unit|
-	sed --unbuffered $(if $(value V),'','1,/✖ failing tests:/ {/[✔ℹ▶✖] /d}')
-typecheck-web: link-void; npm run typecheck
+test-web: link-void; bun test --isolate --pass-with-no-tests $(if $(value V),,--only-failures)
+typecheck-web: link-void; bun check --build
 
 bench:; $(bench_test) | $(go_test_filter)
